@@ -1,10 +1,18 @@
+/* styles/3-footer.css */
 footer {
-	position: fixed;
-	bottom: 0;
-	background-color: white;
-	height: 60px;
-	width: 100%;
-	text-align: center;
-	line-height: 30px;
-	border-top: 1px solid #CCCCCC;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 60px;
+    width: 100%;
+    background-color: white;
+    border-top: 1px solid #FF5A5F;
+    text-align: center;
+}
+
+footer p {
+    line-height: 60px;
+    margin: 0;
+    font-size: 14px;
+    color: #CCCCCC;
 }
