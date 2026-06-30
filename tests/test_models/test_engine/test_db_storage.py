@@ -1,153 +1,145 @@
 #!/usr/bin/python3
-"""Module for testing DBStorage"""
+"""Unit tests for the DBStorage class."""
 import unittest
 import os
+from models import storage
+from models.state import State
+from models.city import City
+from models.user import User
 
-storage_type = os.getenv('HBNB_TYPE_STORAGE', 'file')
+IS_DB = os.getenv("HBNB_TYPE_STORAGE") == "db"
 
 
-@unittest.skipIf(storage_type != 'db', 'DBStorage tests only')
-class test_dbStorage(unittest.TestCase):
-    """Class to test the DBStorage method"""
+def get_mysql_count(table):
+    """Return the row count of a MySQL table using MySQLdb.
 
-    def setUp(self):
-        """Set up test environment"""
-        from models import storage
-        self.storage = storage
+    Args:
+        table (str): The name of the table to count.
 
-    def tearDown(self):
-        """Clean up after each test"""
-        pass
+    Returns:
+        int: Number of rows in the table.
+    """
+    import MySQLdb
+    conn = MySQLdb.connect(
+        host=os.getenv("HBNB_MYSQL_HOST", "localhost"),
+        user=os.getenv("HBNB_MYSQL_USER"),
+        passwd=os.getenv("HBNB_MYSQL_PWD"),
+        db=os.getenv("HBNB_MYSQL_DB")
+    )
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM {}".format(table))
+    count = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+    return count
 
-    def test_storage_type_is_db(self):
-        """Confirm we are using DBStorage"""
+
+@unittest.skipIf(not IS_DB, "DBStorage tests only — set HBNB_TYPE_STORAGE=db")
+class TestDBStorageInstantiation(unittest.TestCase):
+    """Tests for DBStorage instantiation."""
+
+    def test_storage_is_dbstorage(self):
+        """Test that storage is a DBStorage instance."""
         from models.engine.db_storage import DBStorage
-        self.assertIsInstance(self.storage, DBStorage)
+        self.assertIsInstance(storage, DBStorage)
 
     def test_all_returns_dict(self):
-        """storage.all() returns a dict"""
-        result = self.storage.all()
+        """Test that all() returns a dictionary."""
+        self.assertIsInstance(storage.all(), dict)
+
+
+@unittest.skipIf(not IS_DB, "DBStorage tests only — set HBNB_TYPE_STORAGE=db")
+class TestDBStorageAll(unittest.TestCase):
+    """Tests for DBStorage all method."""
+
+    def test_all_with_state_class(self):
+        """Test that all(State) returns only State objects."""
+        result = storage.all(State)
+        for key in result:
+            self.assertTrue(key.startswith("State."))
+
+    def test_all_with_city_class(self):
+        """Test that all(City) returns only City objects."""
+        result = storage.all(City)
+        for key in result:
+            self.assertTrue(key.startswith("City."))
+
+    def test_all_with_string_class_name(self):
+        """Test that all('State') works with a string class name."""
+        result = storage.all("State")
+        for key in result:
+            self.assertTrue(key.startswith("State."))
+
+    def test_all_none_returns_multiple_types(self):
+        """Test that all(None) can return objects of different types."""
+        s = State(name="AllTestState")
+        s.save()
+        result = storage.all()
         self.assertIsInstance(result, dict)
+        storage.delete(s)
+        storage.save()
 
-    def test_all_with_class_arg(self):
-        """storage.all(cls) returns dict filtered by class"""
-        from models.state import State
-        result = self.storage.all(State)
-        self.assertIsInstance(result, dict)
 
-    def test_new_obj(self):
-        """New object is added via storage.new()"""
-        from models.state import State
-        s = State()
-        s.name = "TestState"
-        self.storage.new(s)
-        self.storage.save()
-        key = 'State.' + s.id
-        self.assertIn(key, self.storage.all(State))
-        self.storage.delete(s)
-        self.storage.save()
+@unittest.skipIf(not IS_DB, "DBStorage tests only — set HBNB_TYPE_STORAGE=db")
+class TestDBStorageNewAndSave(unittest.TestCase):
+    """Tests for DBStorage new and save methods."""
 
-    def test_save_obj(self):
-        """storage.save() commits object to DB"""
-        from models.state import State
-        s = State()
-        s.name = "SaveTestState"
-        self.storage.new(s)
-        self.storage.save()
-        all_states = self.storage.all(State)
-        key = 'State.' + s.id
-        self.assertIn(key, all_states)
-        self.storage.delete(s)
-        self.storage.save()
+    def test_create_state_adds_db_row(self):
+        """Test that saving a State adds exactly one row to states table."""
+        before = get_mysql_count("states")
+        s = State(name="TestNewState")
+        s.save()
+        after = get_mysql_count("states")
+        self.assertEqual(after - before, 1)
+        storage.delete(s)
+        storage.save()
 
-    def test_delete_obj(self):
-        """storage.delete() removes object from DB"""
-        from models.state import State
-        s = State()
-        s.name = "DeleteState"
-        self.storage.new(s)
-        self.storage.save()
-        self.storage.delete(s)
-        self.storage.save()
-        all_states = self.storage.all(State)
-        key = 'State.' + s.id
-        self.assertNotIn(key, all_states)
+    def test_create_user_adds_db_row(self):
+        """Test that saving a User adds exactly one row to users table."""
+        before = get_mysql_count("users")
+        u = User(email="test@db.com", password="testpwd")
+        u.save()
+        after = get_mysql_count("users")
+        self.assertEqual(after - before, 1)
+        storage.delete(u)
+        storage.save()
 
-    def test_reload(self):
-        """storage.reload() is callable without error"""
+
+@unittest.skipIf(not IS_DB, "DBStorage tests only — set HBNB_TYPE_STORAGE=db")
+class TestDBStorageDelete(unittest.TestCase):
+    """Tests for DBStorage delete method."""
+
+    def test_delete_state_removes_db_row(self):
+        """Test that deleting a State removes one row from states table."""
+        s = State(name="ToDeleteDB")
+        s.save()
+        before = get_mysql_count("states")
+        storage.delete(s)
+        storage.save()
+        after = get_mysql_count("states")
+        self.assertEqual(before - after, 1)
+
+    def test_delete_none_does_nothing(self):
+        """Test that delete(None) does not raise or affect the DB."""
+        before = get_mysql_count("states")
         try:
-            self.storage.reload()
+            storage.delete(None)
+            storage.save()
         except Exception as e:
-            self.fail("reload() raised an exception: {}".format(e))
+            self.fail("delete(None) raised: {}".format(e))
+        after = get_mysql_count("states")
+        self.assertEqual(before, after)
 
-    def test_storage_has_all(self):
-        """DBStorage has all() method"""
-        self.assertTrue(hasattr(self.storage, 'all'))
+    def test_deleted_object_not_in_all(self):
+        """Test that a deleted object is no longer in storage.all()."""
+        s = State(name="GoneState")
+        s.save()
+        key = "State.{}".format(s.id)
+        self.assertIn(key, storage.all())
+        storage.delete(s)
+        storage.save()
+        self.assertNotIn(key, storage.all())
 
-    def test_storage_has_new(self):
-        """DBStorage has new() method"""
-        self.assertTrue(hasattr(self.storage, 'new'))
 
-    def test_storage_has_save(self):
-        """DBStorage has save() method"""
-        self.assertTrue(hasattr(self.storage, 'save'))
-
-    def test_storage_has_delete(self):
-        """DBStorage has delete() method"""
-        self.assertTrue(hasattr(self.storage, 'delete'))
-
-    def test_storage_has_reload(self):
-        """DBStorage has reload() method"""
-        self.assertTrue(hasattr(self.storage, 'reload'))
-
-    def test_key_format_in_all(self):
-        """Keys in all() follow ClassName.id format"""
-        from models.state import State
-        s = State()
-        s.name = "KeyFormatState"
-        self.storage.new(s)
-        self.storage.save()
-        result = self.storage.all(State)
-        for key in result.keys():
-            parts = key.split('.')
-            self.assertEqual(len(parts), 2)
-            self.assertEqual(parts[0], 'State')
-        self.storage.delete(s)
-        self.storage.save()
-
-    def test_state_creation_mysql(self):
-        """Validate that creating a State adds a row to the DB (MySQLdb)"""
-        import MySQLdb
-        import subprocess
-
-        db_user = os.getenv('HBNB_MYSQL_USER')
-        db_pwd = os.getenv('HBNB_MYSQL_PWD')
-        db_host = os.getenv('HBNB_MYSQL_HOST', 'localhost')
-        db_name = os.getenv('HBNB_MYSQL_DB')
-
-        conn = MySQLdb.connect(
-            host=db_host, user=db_user, passwd=db_pwd, db=db_name
-        )
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM states")
-        count_before = cursor.fetchone()[0]
-        cursor.close()
-        conn.close()
-
-        result = subprocess.run(
-            ['python3', 'console.py'],
-            input='create State name="California"\nquit\n',
-            capture_output=True, text=True,
-            env=dict(os.environ)
-        )
-
-        conn = MySQLdb.connect(
-            host=db_host, user=db_user, passwd=db_pwd, db=db_name
-        )
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM states")
-        count_after = cursor.fetchone()[0]
-        cursor.close()
-        conn.close()
-
-        self.assertEqual(count_after - count_before, 1)
+if __name__ == "__main__":
+    unittest.main()

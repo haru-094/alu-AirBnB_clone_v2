@@ -1,72 +1,83 @@
 #!/usr/bin/python3
-"""This module defines a base class for all models in our hbnb clone"""
+"""This module defines the BaseModel class and SQLAlchemy Base."""
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.ext.declarative import declarative_base
 
-time_fmt = '%Y-%m-%dT%H:%M:%S.%f'
 Base = declarative_base()
 
 
 class BaseModel:
-    """A base class for all hbnb models"""
-    id = Column(String(60), primary_key=True, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow())
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow())
+    """Defines all common attributes and methods for other classes.
+
+    All models inherit from this class to get id, created_at, and updated_at.
+    Models that use DBStorage also inherit from Base to enable SQLAlchemy
+    table mapping.
+    """
+
+    id = Column(String(60), nullable=False, primary_key=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     def __init__(self, *args, **kwargs):
-        """Instantiates a new model"""
+        """Initialize a new BaseModel instance.
+
+        Args:
+            *args: Unused positional arguments.
+            **kwargs: Key/value pairs to set as instance attributes.
+                      Supports both JSON-reloaded dicts and direct param dicts
+                      like {'name': 'California'}.
+        """
+        fmt = "%Y-%m-%dT%H:%M:%S.%f"
         if kwargs:
             for key, value in kwargs.items():
-                if key != '__class__':
-                    setattr(self, key, value)
-            if 'created_at' in kwargs:
-                self.created_at = datetime.strptime(
-                    kwargs['created_at'], time_fmt) \
-                    if isinstance(kwargs['created_at'], str) \
-                    else kwargs['created_at']
-            else:
-                self.created_at = datetime.utcnow()
-            if 'updated_at' in kwargs:
-                self.updated_at = datetime.strptime(
-                    kwargs['updated_at'], time_fmt) \
-                    if isinstance(kwargs['updated_at'], str) \
-                    else kwargs['updated_at']
-            else:
-                self.updated_at = datetime.utcnow()
-            if 'id' not in kwargs:
+                if key == "__class__":
+                    continue
+                if key in ("created_at", "updated_at"):
+                    if isinstance(value, str):
+                        value = datetime.strptime(value, fmt)
+                setattr(self, key, value)
+            if "id" not in kwargs:
                 self.id = str(uuid.uuid4())
+            if "created_at" not in kwargs:
+                self.created_at = datetime.utcnow()
+            if "updated_at" not in kwargs:
+                self.updated_at = datetime.utcnow()
         else:
             self.id = str(uuid.uuid4())
             self.created_at = datetime.utcnow()
             self.updated_at = datetime.utcnow()
 
     def __str__(self):
-        """Returns a string representation of the instance"""
-        cls = (str(type(self)).split('.')[-1]).split('\'')[0]
-        return '[{}] ({}) {}'.format(cls, self.id, self.__dict__)
+        """Return string representation of the BaseModel instance."""
+        d = {k: v for k, v in self.__dict__.items()
+             if k != '_sa_instance_state'}
+        return "[{}] ({}) {}".format(type(self).__name__, self.id, d)
 
     def save(self):
-        """Updates updated_at with current time when instance is changed"""
-        from models import storage
+        """Update updated_at to now, register with storage, and save."""
         self.updated_at = datetime.utcnow()
+        from models import storage
         storage.new(self)
         storage.save()
 
     def to_dict(self):
-        """Convert instance into dict format"""
-        dictionary = {}
-        dictionary.update(self.__dict__)
-        dictionary.update({'__class__':
-                          (str(type(self)).split('.')[-1]).split('\'')[0]})
-        dictionary['created_at'] = self.created_at.isoformat()
-        dictionary['updated_at'] = self.updated_at.isoformat()
-        if '_sa_instance_state' in dictionary:
-            del dictionary['_sa_instance_state']
-        return dictionary
+        """Return a dictionary representation of the instance.
+
+        Returns:
+            dict: All instance attributes including __class__, with
+                  created_at and updated_at as ISO-format strings.
+                  The SQLAlchemy internal key _sa_instance_state is excluded.
+        """
+        result = self.__dict__.copy()
+        result.pop("_sa_instance_state", None)
+        result["__class__"] = type(self).__name__
+        result["created_at"] = self.created_at.isoformat()
+        result["updated_at"] = self.updated_at.isoformat()
+        return result
 
     def delete(self):
-        """Deletes the current instance from the storage"""
+        """Delete the current instance from storage."""
         from models import storage
         storage.delete(self)

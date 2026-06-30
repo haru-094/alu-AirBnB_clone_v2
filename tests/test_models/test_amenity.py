@@ -1,62 +1,60 @@
 #!/usr/bin/python3
-"""Unittest cases for Amenity model"""
-import os
+"""Unit tests for the Amenity class."""
 import unittest
-from tests.test_models.test_base_model import test_basemodel
+import os
 from models.amenity import Amenity
+from models.base_model import BaseModel
 
-storage_type = os.getenv('HBNB_TYPE_STORAGE', 'file')
+IS_DB = os.getenv("HBNB_TYPE_STORAGE") == "db"
 
 
-class test_Amenity(test_basemodel):
-    """Test cases for Amenity class"""
+class TestAmenityInstantiation(unittest.TestCase):
+    """Tests for Amenity instantiation."""
 
-    def __init__(self, *args, **kwargs):
-        """Initialize test class"""
-        super().__init__(*args, **kwargs)
-        self.name = "Amenity"
-        self.value = Amenity
+    def test_is_basemodel_subclass(self):
+        """Test that Amenity is a subclass of BaseModel."""
+        obj = Amenity()
+        self.assertIsInstance(obj, BaseModel)
 
-    def test_name2(self):
-        """Test name attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.name), str)
+    @unittest.skipIf(IS_DB, "Amenity.name is a Column in DBStorage")
+    def test_name_class_attr(self):
+        """Test that name is a class attribute and empty string."""
+        self.assertEqual(Amenity.name, "")
 
-    def test_is_subclass(self):
-        """Test that Amenity is a subclass of BaseModel"""
-        from models.base_model import BaseModel
-        new = self.value()
-        self.assertIsInstance(new, BaseModel)
+    @unittest.skipIf(IS_DB, "Amenity.name is a Column in DBStorage")
+    def test_name_is_string(self):
+        """Test that name attribute type is str."""
+        self.assertIsInstance(Amenity.name, str)
 
-    def test_has_name(self):
-        """Test that Amenity has name attribute"""
-        new = self.value()
-        self.assertTrue(hasattr(new, 'name'))
+    @unittest.skipIf(not IS_DB, "Only for DBStorage")
+    def test_name_is_column(self):
+        """Test that name is a SQLAlchemy Column in DBStorage."""
+        from sqlalchemy import Column
+        self.assertIsInstance(Amenity.name.property.columns[0], Column)
 
     def test_str_representation(self):
-        """Test __str__ includes class name"""
-        new = self.value()
-        self.assertIn('Amenity', str(new))
+        """Test that str representation contains Amenity."""
+        obj = Amenity()
+        self.assertIn("Amenity", str(obj))
 
-    def test_to_dict_class_name(self):
-        """Test that to_dict contains correct __class__ value"""
-        new = self.value()
-        d = new.to_dict()
-        self.assertEqual(d['__class__'], 'Amenity')
+    def test_to_dict_class_is_amenity(self):
+        """Test that to_dict has __class__ equal to Amenity."""
+        obj = Amenity()
+        self.assertEqual(obj.to_dict()["__class__"], "Amenity")
 
-    @unittest.skipIf(storage_type == 'db', 'FileStorage only')
-    def test_name_default_file(self):
-        """Test name defaults to empty string in file storage"""
-        new = self.value()
-        self.assertEqual(new.name, '')
+    def test_kwargs_instantiation(self):
+        """Test instantiation from dictionary."""
+        obj = Amenity()
+        obj_dict = obj.to_dict()
+        new_obj = Amenity(**obj_dict)
+        self.assertEqual(obj.id, new_obj.id)
 
-    def test_instantiation(self):
-        """Test that Amenity can be instantiated"""
-        new = self.value()
-        self.assertIsNotNone(new)
+    def test_instance_name_can_be_set(self):
+        """Test that name can be set as an instance attribute."""
+        obj = Amenity()
+        obj.name = "WiFi"
+        self.assertEqual(obj.name, "WiFi")
 
-    def test_to_dict_has_id(self):
-        """Test that to_dict contains id"""
-        new = self.value()
-        d = new.to_dict()
-        self.assertIn('id', d)
+
+if __name__ == "__main__":
+    unittest.main()

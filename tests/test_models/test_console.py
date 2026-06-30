@@ -43,9 +43,10 @@ class TestConsoleCreate(unittest.TestCase):
     def test_create_state_returns_id(self):
         """Test that create State prints a valid id (FileStorage)."""
         output = run_cmd('create State name="TestCreate"')
-        self.assertEqual(len(output), 36)
+        self.assertEqual(len(output), 36)  # UUID length
         key = "State.{}".format(output)
         self.assertIn(key, storage.all())
+        # Clean up
         del storage.all()[key]
         storage.save()
 
@@ -246,7 +247,7 @@ class TestConsoleUpdate(unittest.TestCase):
 
     @unittest.skipIf(IS_DB, "FileStorage update value test only")
     def test_update_no_value(self):
-        """Test that update with no value prints error (FileStorage)."""
+        """Test update with no attribute value prints error (FileStorage)."""
         s = State()
         s.name = "UpdateValueTest"
         storage.new(s)
@@ -257,7 +258,7 @@ class TestConsoleUpdate(unittest.TestCase):
 
     @unittest.skipIf(IS_DB, "FileStorage update sets attribute test only")
     def test_update_sets_attribute(self):
-        """Test update sets the attribute on the object (FileStorage)."""
+        """Test update sets the given attribute on the object (FileStorage)."""
         s = State()
         s.name = "BeforeUpdate"
         storage.new(s)
@@ -271,7 +272,7 @@ class TestConsoleUpdate(unittest.TestCase):
 
     @unittest.skipIf(not IS_DB, "DBStorage update test only")
     def test_update_no_attribute_db(self):
-        """Test update with no attribute prints error (DBStorage)."""
+        """Test update with no attribute name prints error (DBStorage)."""
         s = State(name="DBUpdateTest")
         s.save()
         output = run_cmd("update State {}".format(s.id))
@@ -281,7 +282,7 @@ class TestConsoleUpdate(unittest.TestCase):
 
     @unittest.skipIf(not IS_DB, "DBStorage update no value test only")
     def test_update_no_value_db(self):
-        """Test update with no value prints error (DBStorage)."""
+        """Test update with no attribute value prints error (DBStorage)."""
         s = State(name="DBUpdateValueTest")
         s.save()
         output = run_cmd("update State {} name".format(s.id))

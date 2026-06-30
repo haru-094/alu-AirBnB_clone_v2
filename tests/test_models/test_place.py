@@ -1,122 +1,116 @@
 #!/usr/bin/python3
-"""Unittest cases for Place model"""
-import os
+"""Unit tests for the Place class."""
 import unittest
-from tests.test_models.test_base_model import test_basemodel
+import os
 from models.place import Place
+from models.base_model import BaseModel
 
-storage_type = os.getenv('HBNB_TYPE_STORAGE', 'file')
+IS_DB = os.getenv("HBNB_TYPE_STORAGE") == "db"
 
 
-class test_Place(test_basemodel):
-    """Test cases for Place class"""
+class TestPlaceInstantiation(unittest.TestCase):
+    """Tests for Place instantiation."""
 
-    def __init__(self, *args, **kwargs):
-        """Initialize test class"""
-        super().__init__(*args, **kwargs)
-        self.name = "Place"
-        self.value = Place
+    def test_is_basemodel_subclass(self):
+        """Test that Place is a subclass of BaseModel."""
+        obj = Place()
+        self.assertIsInstance(obj, BaseModel)
 
-    def test_city_id(self):
-        """Test city_id attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.city_id), str)
+    @unittest.skipIf(IS_DB, "Place.city_id is a Column in DBStorage")
+    def test_city_id_class_attr(self):
+        """Test that city_id is a class attribute and empty string."""
+        self.assertEqual(Place.city_id, "")
 
-    def test_user_id(self):
-        """Test user_id attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.user_id), str)
+    @unittest.skipIf(IS_DB, "Place.user_id is a Column in DBStorage")
+    def test_user_id_class_attr(self):
+        """Test that user_id is a class attribute and empty string."""
+        self.assertEqual(Place.user_id, "")
 
-    def test_name(self):
-        """Test name attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.name), str)
+    @unittest.skipIf(IS_DB, "Place.name is a Column in DBStorage")
+    def test_name_class_attr(self):
+        """Test that name is a class attribute and empty string."""
+        self.assertEqual(Place.name, "")
 
-    def test_description(self):
-        """Test description attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.description), str)
+    @unittest.skipIf(IS_DB, "Place.description is a Column in DBStorage")
+    def test_description_class_attr(self):
+        """Test that description is a class attribute and empty string."""
+        self.assertEqual(Place.description, "")
 
-    def test_number_rooms(self):
-        """Test number_rooms attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.number_rooms), int)
+    @unittest.skipIf(IS_DB, "Place.number_rooms is a Column in DBStorage")
+    def test_number_rooms_class_attr(self):
+        """Test that number_rooms is a class attribute and 0."""
+        self.assertEqual(Place.number_rooms, 0)
 
-    def test_number_bathrooms(self):
-        """Test number_bathrooms attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.number_bathrooms), int)
+    @unittest.skipIf(IS_DB, "Place.number_bathrooms is a Column in DBStorage")
+    def test_number_bathrooms_class_attr(self):
+        """Test that number_bathrooms is a class attribute and 0."""
+        self.assertEqual(Place.number_bathrooms, 0)
 
-    def test_max_guest(self):
-        """Test max_guest attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.max_guest), int)
+    @unittest.skipIf(IS_DB, "Place.max_guest is a Column in DBStorage")
+    def test_max_guest_class_attr(self):
+        """Test that max_guest is a class attribute and 0."""
+        self.assertEqual(Place.max_guest, 0)
 
-    def test_price_by_night(self):
-        """Test price_by_night attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.price_by_night), int)
+    @unittest.skipIf(IS_DB, "Place.price_by_night is a Column in DBStorage")
+    def test_price_by_night_class_attr(self):
+        """Test that price_by_night is a class attribute and 0."""
+        self.assertEqual(Place.price_by_night, 0)
 
-    def test_latitude(self):
-        """Test latitude attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.latitude), float)
+    @unittest.skipIf(IS_DB, "Place.latitude is a Column in DBStorage")
+    def test_latitude_class_attr(self):
+        """Test that latitude is a class attribute and 0.0."""
+        self.assertEqual(Place.latitude, 0.0)
 
-    def test_longitude(self):
-        """Test longitude attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.latitude), float)
+    @unittest.skipIf(IS_DB, "Place.longitude is a Column in DBStorage")
+    def test_longitude_class_attr(self):
+        """Test that longitude is a class attribute and 0.0."""
+        self.assertEqual(Place.longitude, 0.0)
 
-    @unittest.skipIf(storage_type == 'db', 'FileStorage only')
-    def test_amenity_ids(self):
-        """Test amenity_ids attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.amenity_ids), list)
+    @unittest.skipIf(IS_DB, "Place.amenity_ids only in FileStorage")
+    def test_amenity_ids_class_attr(self):
+        """Test that amenity_ids is a class attribute and empty list."""
+        self.assertEqual(Place.amenity_ids, [])
 
-    def test_is_subclass(self):
-        """Test that Place is a subclass of BaseModel"""
-        from models.base_model import BaseModel
-        new = self.value()
-        self.assertIsInstance(new, BaseModel)
+    @unittest.skipIf(IS_DB, "Place.number_rooms is a Column in DBStorage")
+    def test_number_rooms_is_int(self):
+        """Test that number_rooms is an int."""
+        self.assertIsInstance(Place.number_rooms, int)
 
-    def test_has_city_id(self):
-        """Test that Place has city_id attribute"""
-        new = self.value()
-        self.assertTrue(hasattr(new, 'city_id'))
+    @unittest.skipIf(IS_DB, "Place.latitude is a Column in DBStorage")
+    def test_latitude_is_float(self):
+        """Test that latitude is a float."""
+        self.assertIsInstance(Place.latitude, float)
 
-    def test_has_user_id(self):
-        """Test that Place has user_id attribute"""
-        new = self.value()
-        self.assertTrue(hasattr(new, 'user_id'))
+    @unittest.skipIf(IS_DB, "Place.amenity_ids only in FileStorage")
+    def test_amenity_ids_is_list(self):
+        """Test that amenity_ids is a list."""
+        self.assertIsInstance(Place.amenity_ids, list)
 
-    def test_has_name(self):
-        """Test that Place has name attribute"""
-        new = self.value()
-        self.assertTrue(hasattr(new, 'name'))
+    @unittest.skipIf(not IS_DB, "Only for DBStorage")
+    def test_columns_are_sqlalchemy_columns(self):
+        """Test that Place attributes are SQLAlchemy Columns in DBStorage."""
+        from sqlalchemy import Column
+        self.assertIsInstance(Place.name.property.columns[0], Column)
+        self.assertIsInstance(Place.city_id.property.columns[0], Column)
+        self.assertIsInstance(Place.user_id.property.columns[0], Column)
 
     def test_str_representation(self):
-        """Test __str__ includes class name"""
-        new = self.value()
-        self.assertIn('Place', str(new))
+        """Test that str representation contains Place."""
+        obj = Place()
+        self.assertIn("Place", str(obj))
 
-    def test_to_dict_class_name(self):
-        """Test that to_dict contains correct __class__ value"""
-        new = self.value()
-        d = new.to_dict()
-        self.assertEqual(d['__class__'], 'Place')
+    def test_to_dict_class_is_place(self):
+        """Test that to_dict has __class__ equal to Place."""
+        obj = Place()
+        self.assertEqual(obj.to_dict()["__class__"], "Place")
 
-    @unittest.skipIf(storage_type == 'db', 'FileStorage only')
-    def test_numeric_defaults_file(self):
-        """Test numeric attributes default to 0 in file storage"""
-        new = self.value()
-        self.assertEqual(new.number_rooms, 0)
-        self.assertEqual(new.number_bathrooms, 0)
-        self.assertEqual(new.max_guest, 0)
-        self.assertEqual(new.price_by_night, 0)
+    def test_kwargs_instantiation(self):
+        """Test instantiation from dictionary."""
+        obj = Place()
+        obj_dict = obj.to_dict()
+        new_obj = Place(**obj_dict)
+        self.assertEqual(obj.id, new_obj.id)
 
-    @unittest.skipIf(storage_type == 'db', 'FileStorage only')
-    def test_float_defaults_file(self):
-        """Test float attributes default to 0.0 in file storage"""
-        new = self.value()
-        self.assertEqual(new.latitude, 0.0)
-        self.assertEqual(new.longitude, 0.0)
+
+if __name__ == "__main__":
+    unittest.main()

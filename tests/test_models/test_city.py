@@ -1,67 +1,73 @@
 #!/usr/bin/python3
-"""Unittest cases for City model"""
-import os
+"""Unit tests for the City class."""
 import unittest
-from tests.test_models.test_base_model import test_basemodel
+import os
 from models.city import City
+from models.base_model import BaseModel
 
-storage_type = os.getenv('HBNB_TYPE_STORAGE', 'file')
+IS_DB = os.getenv("HBNB_TYPE_STORAGE") == "db"
 
 
-class test_City(test_basemodel):
-    """Test cases for City class"""
+class TestCityInstantiation(unittest.TestCase):
+    """Tests for City instantiation."""
 
-    def __init__(self, *args, **kwargs):
-        """Initialize test class"""
-        super().__init__(*args, **kwargs)
-        self.name = "City"
-        self.value = City
+    def test_is_basemodel_subclass(self):
+        """Test that City is a subclass of BaseModel."""
+        obj = City()
+        self.assertIsInstance(obj, BaseModel)
 
-    def test_state_id(self):
-        """Test state_id attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.state_id), str)
+    @unittest.skipIf(IS_DB, "City.state_id is a Column in DBStorage")
+    def test_state_id_class_attr(self):
+        """Test that state_id is a class attribute and empty string."""
+        self.assertEqual(City.state_id, "")
 
-    def test_name(self):
-        """Test name attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.name), str)
+    @unittest.skipIf(IS_DB, "City.name is a Column in DBStorage")
+    def test_name_class_attr(self):
+        """Test that name is a class attribute and empty string."""
+        self.assertEqual(City.name, "")
 
-    def test_is_subclass(self):
-        """Test that City is a subclass of BaseModel"""
-        from models.base_model import BaseModel
-        new = self.value()
-        self.assertIsInstance(new, BaseModel)
+    @unittest.skipIf(IS_DB, "City.state_id is a Column in DBStorage")
+    def test_state_id_is_string(self):
+        """Test that state_id attribute type is str."""
+        self.assertIsInstance(City.state_id, str)
 
-    def test_has_name(self):
-        """Test that City has name attribute"""
-        new = self.value()
-        self.assertTrue(hasattr(new, 'name'))
+    @unittest.skipIf(IS_DB, "City.name is a Column in DBStorage")
+    def test_name_is_string(self):
+        """Test that name attribute type is str."""
+        self.assertIsInstance(City.name, str)
 
-    def test_has_state_id(self):
-        """Test that City has state_id attribute"""
-        new = self.value()
-        self.assertTrue(hasattr(new, 'state_id'))
+    @unittest.skipIf(not IS_DB, "Only for DBStorage")
+    def test_columns_are_sqlalchemy_columns(self):
+        """Test that City attributes are SQLAlchemy Columns in DBStorage."""
+        from sqlalchemy import Column
+        self.assertIsInstance(City.name.property.columns[0], Column)
+        self.assertIsInstance(City.state_id.property.columns[0], Column)
 
     def test_str_representation(self):
-        """Test __str__ includes class name"""
-        new = self.value()
-        self.assertIn('City', str(new))
+        """Test that str representation contains City."""
+        obj = City()
+        self.assertIn("City", str(obj))
 
-    def test_to_dict_class_name(self):
-        """Test that to_dict contains correct __class__ value"""
-        new = self.value()
-        d = new.to_dict()
-        self.assertEqual(d['__class__'], 'City')
+    def test_to_dict_class_is_city(self):
+        """Test that to_dict has __class__ equal to City."""
+        obj = City()
+        self.assertEqual(obj.to_dict()["__class__"], "City")
 
-    @unittest.skipIf(storage_type == 'db', 'FileStorage only')
-    def test_state_id_default_file(self):
-        """Test state_id defaults to empty string in file storage"""
-        new = self.value()
-        self.assertEqual(new.state_id, '')
+    def test_kwargs_instantiation(self):
+        """Test instantiation from dictionary."""
+        obj = City()
+        obj_dict = obj.to_dict()
+        new_obj = City(**obj_dict)
+        self.assertEqual(obj.id, new_obj.id)
 
-    @unittest.skipIf(storage_type == 'db', 'FileStorage only')
-    def test_name_default_file(self):
-        """Test name defaults to empty string in file storage"""
-        new = self.value()
-        self.assertEqual(new.name, '')
+    def test_instance_attributes_settable(self):
+        """Test that name and state_id can be set on City instances."""
+        obj = City()
+        obj.name = "Nairobi"
+        obj.state_id = "some-state-id"
+        self.assertEqual(obj.name, "Nairobi")
+        self.assertEqual(obj.state_id, "some-state-id")
+
+
+if __name__ == "__main__":
+    unittest.main()

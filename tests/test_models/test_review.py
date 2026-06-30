@@ -1,73 +1,86 @@
 #!/usr/bin/python3
-"""Unittest cases for Review model"""
-import os
+"""Unit tests for the Review class."""
 import unittest
-from tests.test_models.test_base_model import test_basemodel
+import os
 from models.review import Review
+from models.base_model import BaseModel
 
-storage_type = os.getenv('HBNB_TYPE_STORAGE', 'file')
+IS_DB = os.getenv("HBNB_TYPE_STORAGE") == "db"
 
 
-class test_review(test_basemodel):
-    """Test cases for Review class"""
+class TestReviewInstantiation(unittest.TestCase):
+    """Tests for Review instantiation."""
 
-    def __init__(self, *args, **kwargs):
-        """Initialize test class"""
-        super().__init__(*args, **kwargs)
-        self.name = "Review"
-        self.value = Review
+    def test_is_basemodel_subclass(self):
+        """Test that Review is a subclass of BaseModel."""
+        obj = Review()
+        self.assertIsInstance(obj, BaseModel)
 
-    def test_place_id(self):
-        """Test place_id attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.place_id), str)
+    @unittest.skipIf(IS_DB, "Review.place_id is a Column in DBStorage")
+    def test_place_id_class_attr(self):
+        """Test that place_id is a class attribute and empty string."""
+        self.assertEqual(Review.place_id, "")
 
-    def test_user_id(self):
-        """Test user_id attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.user_id), str)
+    @unittest.skipIf(IS_DB, "Review.user_id is a Column in DBStorage")
+    def test_user_id_class_attr(self):
+        """Test that user_id is a class attribute and empty string."""
+        self.assertEqual(Review.user_id, "")
 
-    def test_text(self):
-        """Test text attribute type"""
-        new = self.value()
-        self.assertEqual(type(new.text), str)
+    @unittest.skipIf(IS_DB, "Review.text is a Column in DBStorage")
+    def test_text_class_attr(self):
+        """Test that text is a class attribute and empty string."""
+        self.assertEqual(Review.text, "")
 
-    def test_is_subclass(self):
-        """Test that Review is a subclass of BaseModel"""
-        from models.base_model import BaseModel
-        new = self.value()
-        self.assertIsInstance(new, BaseModel)
+    @unittest.skipIf(IS_DB, "Review.place_id is a Column in DBStorage")
+    def test_place_id_is_string(self):
+        """Test that place_id attribute type is str."""
+        self.assertIsInstance(Review.place_id, str)
 
-    def test_has_place_id(self):
-        """Test that Review has place_id attribute"""
-        new = self.value()
-        self.assertTrue(hasattr(new, 'place_id'))
+    @unittest.skipIf(IS_DB, "Review.user_id is a Column in DBStorage")
+    def test_user_id_is_string(self):
+        """Test that user_id attribute type is str."""
+        self.assertIsInstance(Review.user_id, str)
 
-    def test_has_user_id(self):
-        """Test that Review has user_id attribute"""
-        new = self.value()
-        self.assertTrue(hasattr(new, 'user_id'))
+    @unittest.skipIf(IS_DB, "Review.text is a Column in DBStorage")
+    def test_text_is_string(self):
+        """Test that text attribute type is str."""
+        self.assertIsInstance(Review.text, str)
 
-    def test_has_text(self):
-        """Test that Review has text attribute"""
-        new = self.value()
-        self.assertTrue(hasattr(new, 'text'))
+    @unittest.skipIf(not IS_DB, "Only for DBStorage")
+    def test_columns_are_sqlalchemy_columns(self):
+        """Test that Review attributes are SQLAlchemy Columns in DBStorage."""
+        from sqlalchemy import Column
+        self.assertIsInstance(Review.text.property.columns[0], Column)
+        self.assertIsInstance(Review.place_id.property.columns[0], Column)
+        self.assertIsInstance(Review.user_id.property.columns[0], Column)
 
     def test_str_representation(self):
-        """Test __str__ includes class name"""
-        new = self.value()
-        self.assertIn('Review', str(new))
+        """Test that str representation contains Review."""
+        obj = Review()
+        self.assertIn("Review", str(obj))
 
-    def test_to_dict_class_name(self):
-        """Test that to_dict contains correct __class__ value"""
-        new = self.value()
-        d = new.to_dict()
-        self.assertEqual(d['__class__'], 'Review')
+    def test_to_dict_class_is_review(self):
+        """Test that to_dict has __class__ equal to Review."""
+        obj = Review()
+        self.assertEqual(obj.to_dict()["__class__"], "Review")
 
-    @unittest.skipIf(storage_type == 'db', 'FileStorage only')
-    def test_defaults_file(self):
-        """Test attribute defaults are empty strings in file storage"""
-        new = self.value()
-        self.assertEqual(new.place_id, '')
-        self.assertEqual(new.user_id, '')
-        self.assertEqual(new.text, '')
+    def test_kwargs_instantiation(self):
+        """Test instantiation from dictionary."""
+        obj = Review()
+        obj_dict = obj.to_dict()
+        new_obj = Review(**obj_dict)
+        self.assertEqual(obj.id, new_obj.id)
+
+    def test_instance_attributes_settable(self):
+        """Test that attributes can be set on Review instances."""
+        obj = Review()
+        obj.text = "Great place!"
+        obj.place_id = "some-place-id"
+        obj.user_id = "some-user-id"
+        self.assertEqual(obj.text, "Great place!")
+        self.assertEqual(obj.place_id, "some-place-id")
+        self.assertEqual(obj.user_id, "some-user-id")
+
+
+if __name__ == "__main__":
+    unittest.main()
